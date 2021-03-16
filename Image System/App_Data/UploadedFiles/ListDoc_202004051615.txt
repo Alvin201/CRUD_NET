@@ -1,0 +1,3 @@
+ID|FileName|CurrentStatus|
+DOC40420200001|A|1|
+DOC50420200005|B|1|

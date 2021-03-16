@@ -1,0 +1,354 @@
+﻿@model IEnumerable<Image_System.DTO.UserDTO>
+@{
+    ViewBag.Title = "Index";
+}
+
+
+@if (TempData["Message"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <strong>Message:</strong> @TempData["Message"]
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+        </button>
+    </div>
+}
+
+<br />
+<h4> Manage User</h4>
+<hr />
+
+
+
+<br />
+<button style="width:100px;vertical-align: middle;margin-left:8%;" class="btn btn-outline-dark" data-toggle="modal" data-target="#myModal" onclick="add();">New Data</button>
+
+
+<div class="container">
+    <br />
+
+    <div style="width:90%; margin:0 auto;">
+        <table id="demoGrid" class="table table-striped table-bordered dt-responsive nowrap">
+            <thead>
+                <tr>
+                    <th>No</th>
+                    <th>NIK</th>
+                    <th>Username</th>
+                    <th>Last Login</th>
+                    <th>Actions</th>
+
+                </tr>
+            </thead>
+        </table>
+    </div>
+</div>
+
+
+<div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="myModalLabelAdd">Add </h4>
+                <h4 class="modal-title" id="myModalLabelEdit">Edit</h4>
+            </div>
+            <div class="modal-body">
+                <form id="form">
+                    <input class="form-control" id="NIK" type="text" />
+                    <div class="form-group">
+                        <label for="File Name">Username</label>
+                        <input type="text" class="form-control" id="Username" placeholder="Username" />
+                        <code id="messageUsername" style="display: none;">Username is required</code>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="File Name">Password</label>
+                        <input type="password" class="form-control" id="Password" placeholder="Password" />
+                        <code id="messagePassword" style="display: none;">Password is required</code>
+                        <a href="" id="generate">Random Password</a><br />
+                    </div>
+
+
+
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" id="btnAdd">Add</button>
+                <button type="button" class="btn btn-primary" id="btnUpdate" style="display:none;" onclick="Update();">Update</button>
+                <button type="button" class="btn btn-default" data-dismiss="modal" id="reset">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!--MODAL DELETE-->
+<div class="modal fade" id="ModalHapus" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="myModalLabelDelete">Delete</h4>
+            </div>
+            <form class="form-horizontal">
+                <div class="modal-body">
+
+                    <input type="hidden" name="NIK" id="NIK" value="">
+                    <div class="alert alert-warning"><p id="confirm"></p></div>
+
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+                    <button class="btn_hapus btn btn-danger" id="btn_hapus">OK</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<!--END MODAL DELETE-->
+
+<script>
+    //Load Data in Table when documents is ready
+    $(document).ready(function () {
+        $("#reset").click(function () {
+            $(':input', '#myModal').val("");
+        });
+    });
+
+    var table = $('#demoGrid').DataTable({
+        "order": [[0, 'asc']],
+        //l - length changing input control
+        //f - filtering input
+        //t - The table!
+        //i - Table information summary
+        //p - pagination control
+        //r - processing display element
+
+        "processing": true, // for show progress bar
+        "serverSide": true, // for process server side
+        "filter": false, // this is for disable filter (search box)
+        "orderMulti": false, // for disable multiple column at once
+        "pageLength": 5,
+        "retrieve": true,
+        "searching": true,
+        "dom": 'rtpi',
+        "pagingType": "full_numbers",
+
+        "ajax": {
+            "url": "/User/LoadData",
+            "type": 'POST'
+        },
+        "columns": [
+            {
+                "data": null, "sortable": false,
+                render: function (data, type, row, meta) {
+                    return meta.row + meta.settings._iDisplayStart + 1;
+                }
+            },
+            { "data": "NIK" },
+            { "data": "Username" },
+            { "data": "LastLoginDate" },
+            {
+                "render": function (data, type, full, meta) {
+                    return '<a href="#" class="btn btn-outline-dark" onclick="return getbyNIK(' + full.NIK + ')">Edit</a>'
+                        + ' ' +
+                        '<a href="javascript:;" class="btn btn-danger btn-xs item_hapus" data="' + full.NIK + '">Delete</a>';
+
+
+                }
+
+            },
+
+        ]
+    });
+
+    function validate() {
+        var isValid = true;
+        if ($('#Username').val().trim() == "") {
+            $('#messageUsername').show();
+            isValid = false;
+        }
+        else if ($('#Password').val().trim() == "") {
+            $('#messagePassword').show();
+            isValid = false;
+        }
+        else {
+            $('#messageUsername').hide();
+            $('#messagePassword').hide();
+        }
+        return isValid;
+    }
+
+    function add() {
+        $('#NIK').val("");
+        $('#Username').val("");
+        $('#Password').val("");
+        $('#btnUpdate').hide();
+        $('#btnAdd').show();
+        $('#NIK').hide();
+
+        $('#myModalLabelEdit').hide();
+        $('#myModalLabelAdd').show();
+    }
+
+    ////Add Data Function
+    $('#btnAdd').on('click', function () {
+        var res = validate();
+        if (res == false) {
+            return false;
+        }
+
+        var ID = $('#ID').val();
+        var Username = $('#Username').val();
+        var Password = $('#Password').val();
+        $.ajax({
+            type: "POST",
+            url: "/User/Insert",
+            dataType: "JSON",
+            data: { ID: ID, Username: Username, Password: Password },
+            success: function (data) {
+
+                if (data) {
+                    $("#demoGrid").DataTable().ajax.reload(null, false);
+                    $('#myModal').modal('hide');
+                    $('#ID').val("");
+                    $('#Username').val("");
+                    $('#Password').val("");
+                    window.location.reload(true);
+                }
+            },
+            error: function (errormessage) {
+                alert(errormessage.responseText);
+                window.location.reload(true);
+            }
+        });
+        return false;
+    });
+
+
+    function getbyNIK(NIK) {
+        $.ajax({
+            url: "/User/Edit/" + NIK,
+            type: "GET",
+            contentType: "application/json;charset=UTF-8",
+            dataType: "json",
+            success: function (result) {
+                $('#NIK').val(result.NIK);
+                $('#Username').val(result.Username);
+                $('#Password').val("");
+                $('#myModal').modal('show');
+                $('#btnUpdate').show();
+                $('#myModalLabelEdit').show();
+                $('#myModalLabelAdd').hide();
+                $('#btnAdd').hide();
+                $('#NIK').show();
+                $("#NIK").prop('disabled', true);
+
+
+
+            },
+            error: function (errormessage) {
+                alert(errormessage.responseText);
+            }
+        });
+        return false;
+    }
+
+    function Update() {
+        var res = validate();
+        if (res == false) {
+            return false;
+        }
+        var empObj = {
+            NIK: $('#NIK').val(),
+            Username: $('#Username').val(),
+            Password: $('#Password').val(),
+        };
+
+        $.ajax({
+            url: "/User/Update",
+            data: JSON.stringify(empObj),
+            type: "POST",
+            contentType: "application/json;charset=utf-8",
+            dataType: "json",
+            success: function (result) {
+                //window.location.reload(CallBack);
+                $("#demoGrid").DataTable().ajax.reload(null, false);
+                $('#myModal').modal('hide');
+                $('#NIK').val("");
+                $('#Username').val("");
+                $('#Password').val("");
+                //alert("Save Succesfully");
+                window.location.reload(true);
+
+            },
+            error: function (errormessage) {
+                alert(errormessage.responseText);
+            }
+        });
+    }
+
+
+    //GET HAPUS
+    $('#demoGrid').on('click', '.item_hapus', function () {
+        var NIK = $(this).attr('data');
+        $('#ModalHapus').modal('show');
+        document.getElementById("confirm").innerHTML = "Are you sure you want to delete this " + "<b>" + NIK + "</b>" + "?";
+        $('#NIK').val(NIK);
+    });
+
+    //Hapus
+    $('#btn_hapus').on('click', function () {
+        var NIK = $('#NIK').val();
+        $.ajax({
+            type: "POST",
+            url: "/User/Delete/",
+            dataType: "JSON",
+            data: { NIK: NIK },
+            success: function (data) {
+                $('#ModalHapus').modal('hide');
+                $("#demoGrid").DataTable().ajax.reload(null, false);
+                window.location.reload(true);
+            }
+        });
+        return false;
+    });
+
+
+
+    //Apply Custom search on jQuery DataTables here
+    oTable = $('#demoGrid').DataTable();
+    $('#btnSearch').click(function () {
+        // DataTable column index 0
+        oTable.columns(2).search($('#txtStatus').val().trim());
+        //hit search on server
+        oTable.draw();
+    });
+
+</script>
+
+<script>
+    var DBS = "DBS_";
+    function generatePassword(limit) {
+        limit = limit || 8;
+        var password = '';
+        var chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!$&*_-';
+        var list = chars.split('');
+        var len = list.length,
+            i = 0;
+        do {
+            i++;
+            var index = Math.floor(Math.random() * len);
+            password += list[index];
+        } while (i < limit);
+        return password;
+    }
+
+    $(function () {
+        $('#generate').click(function (e) {
+            // You can change the password length - generatePassword(12) etc...
+            $('#Password').val(DBS + generatePassword(8));
+            $('#Password').prop('type', 'text');
+
+            e.preventDefault();
+        });
+    });
+</script>

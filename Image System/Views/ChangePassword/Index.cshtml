@@ -1,0 +1,84 @@
+﻿@model Image_System.DTO.ChangePasswordDTO
+
+@{
+    ViewBag.Title = "Change Password";
+}
+
+<br />
+
+
+@if (TempData["Message"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <strong>Message:</strong> @TempData["Message"]
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+        </button>
+    </div>
+}
+
+<div class="container">
+    <br />
+    <h4> My Account</h4>
+    <hr />
+
+    <form id="form" action="/ChangePassword/ChangePassword" method="post">
+        <div class="form-group">
+            <div class="form-group" style="font-family:'Trebuchet MS'">
+                @Html.LabelFor(model => model.NIK, "NIK", htmlAttributes: new { @class = "control-label col-lg-2" })
+                @Html.HiddenFor(model => model.NIK)
+                <div class="col-lg-4">
+                    <input type="text" value="@Model.NIK" name="NIK" class="form-control" id="NIK" disabled />
+                </div>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <div class="form-group" style="font-family:'Trebuchet MS'">
+                @Html.LabelFor(model => model.Password, "New Password", htmlAttributes: new { @class = "control-label col-lg-2" })
+                <div class="col-lg-4">
+                    <input type="password" name="Password" class="form-control" id="Password" />
+                </div>
+            </div>
+        </div>
+
+        <div class="form-group">
+            @Html.LabelFor(model => model.ConfirmPassword, htmlAttributes: new { @class = "control-label col-md-2" })
+            <div class="col-md-10">
+                @Html.EditorFor(model => model.ConfirmPassword, new { htmlAttributes = new { @class = "form-control", @id = "ConfirmPassword" } })
+            </div>
+            <code id="validate-status"></code>
+        </div>
+
+
+        <div class="form-group" style="font-family:'Trebuchet MS'">
+            <div class="form-group" style="font-family:'Trebuchet MS'">
+                <div class="col-lg-4">
+                    <button class="btn btn-primary" type="submit">Change Password</button>
+                </div>
+            </div>
+        </div>
+
+    </form>
+</div>
+
+
+<script>
+    function validate() {
+        var Password = $("#Password").val();
+        var ConfirmPassword = $("#ConfirmPassword").val();
+        if (Password == ConfirmPassword) {
+            $("#validate-status").text("New password and confirm password match");
+        }
+        else {
+            $("#validate-status").text("New password and confirm password does not match");
+        }
+
+    }
+
+    $(document).ready(function () {
+        $("#ConfirmPassword").keyup(validate);
+    });
+
+
+</script>

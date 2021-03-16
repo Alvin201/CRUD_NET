@@ -1,0 +1,62 @@
+﻿<head>
+    <title>@ViewBag.Title App System</title>
+    <link rel="shortcut icon" href="~/Content/images/logo.ico" />
+</head>
+
+<script>
+    function uploaderClicked() {
+        document.getElementById("message").innerHTML = "";
+    }
+</script>
+<br/>
+<h4>Upload Document Master</h4>
+<hr />
+
+<div class="box box-body box-primary">
+    @using (Html.BeginForm("Upload", "Home", FormMethod.Post, new { @id = "form1", @enctype = "multipart/form-data" }))
+    {
+        @Html.AntiForgeryToken()
+
+        <div class="form-horizontal">
+            <div>
+                <label id="message" style="font-family:'Trebuchet MS'; font-size:10pt; color:blue">@ViewBag.Message</label>
+            </div>
+            @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+
+            <label style="font-family:'Trebuchet MS'; font-size:10pt">Extension .xls or .xlsx or .txt:</label>
+            <table style="border:double">
+                <tr>
+                    <td>
+                        <input type="file" name="file_Uploader" onclick="uploaderClicked()" />
+                    </td>
+                    <td>
+                        <input type="submit" value="Upload" class="btn btn-primary" />
+                    </td>
+                </tr>
+            </table>
+
+        </div>
+
+    }
+</div>
+
+<div class="box box-body box-primary">
+    @using (Html.BeginForm("ZipUpload", "Home", FormMethod.Post, new { enctype = "multipart/form-data" }))
+    {
+        @Html.AntiForgeryToken()
+
+        @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+
+        <label style="font-family:'Trebuchet MS'; font-size:10pt">Extension .zip:</label>
+        <table style="border:double">
+            <tr>
+                <td>
+                    <input type="file" name="zip" />
+                </td>
+                <td>
+                    <button class="btn btn-primary">Upload</button>
+                </td>
+            </tr>
+        </table>
+    }
+</div>

@@ -1,0 +1,381 @@
+﻿@model IEnumerable<Image_System.DTO.DocumentUploadDTO>
+@{
+    ViewBag.Title = "Index";
+}
+
+
+
+@if (TempData["Message"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <strong>Message:</strong> @TempData["Message"]
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+        </button>
+    </div>
+}
+
+<br />
+<h4> Manage Document</h4>
+<hr />
+
+<form class="form-group" style="margin-left:8%;">
+    <div class="form-group row">
+        <label for="staticEmail" class="col-sm-2 col-form-label">Filter</label>
+        <div class="col-sm-10">
+            <select id="txtStatus" class="form-control" name="CurrentStatus">
+                <option value="">All</option>
+                <option value="1">Active</option>
+                <option value="2">Suspended</option>
+            </select>
+            <br />
+            <input id="txtID" class="form-control" name="ID" placeholder="Search ID" />
+        </div>
+    </div>
+    <input type="button" class="btn btn-outline-dark" value="Filter" id="btnSearch" style="margin-left:17%;" />
+</form>
+
+
+
+<br />
+<button style="width:90px;vertical-align: middle;margin-left:8%;" class="btn btn-success" data-toggle="modal" data-target="#myModal" onclick="add();">Add</button>
+<button onclick="window.location.href = '/Home/Upload';" class="btn btn-outline-dark">Import</button>
+<button onclick="window.location.href = '/Home/Download_TXT';" class="btn btn-outline-dark" id="txt" style="display: none;">Download text file</button>
+<button onclick="window.location.href = '/Home/Download_XLS';" class="btn btn-outline-dark" id="excel" style="display: none;">Download excel file</button>
+
+<div style="margin-left:80%;">
+    <select id="selform" class="form-control" style="width:70%;">
+        <option value="">Select type  file</option>
+        <option value="TXT">.txt</option>
+        <option value="EXCEL">.xlsx</option>
+    </select>
+</div>
+
+
+<div class="container">
+    <br />
+
+    <div style="width:90%; margin:0 auto;">
+        <table id="demoGrid" class="table table-striped table-bordered dt-responsive nowrap">
+            <thead>
+                <tr>
+                    <th>No</th>
+                    <th>ID Document</th>
+                    <th>File Name</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+        </table>
+    </div>
+</div>
+
+
+<div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="myModalLabelAdd">Add </h4>
+                <h4 class="modal-title" id="myModalLabelEdit">Edit</h4>
+            </div>
+            <div class="modal-body">
+                <form>
+                    <input class="form-control" id="ID" type="text" />
+                    <div class="form-group">
+                        <label for="File Name">File Name</label>
+                        <input type="text" class="form-control" id="FileName" placeholder="File Name" />
+                        <code id="messageFilename" style="display: none;">Filename is required</code>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="Current Status">Status</label>
+                        @Html.DropDownList("CurrentStatus", new List<SelectListItem>
+                         {
+                             new SelectListItem{ Text = "Please Select Approval", Value = "0", Disabled = true },
+                             new SelectListItem{ Text = "Active", Value = "1",Selected=true },
+                             new SelectListItem{ Text = "Suspended", Value = "2",Selected=true }
+                         }, htmlAttributes: new { @class = "form-control" })
+
+                    </div>
+
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" id="btnAdd" onclick="return Insert();">Add</button>
+                <button type="button" class="btn btn-primary" id="btnUpdate" style="display:none;" onclick="Update();">Update</button>
+                <button type="button" class="btn btn-default" data-dismiss="modal" id="reset">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!--MODAL DELETE-->
+<div class="modal fade" id="ModalHapus" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="myModalLabelDelete">Delete</h4>
+            </div>
+            <form class="form-horizontal">
+                <div class="modal-body">
+
+                    <input type="hidden" name="ID" id="ID" value="">
+                    <div class="alert alert-warning"><p id="confirm"></p></div>
+
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+                    <button class="btn_hapus btn btn-danger" id="btn_hapus">OK</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<!--END MODAL DELETE-->
+
+
+<script>
+    //Load Data in Table when documents is ready
+    $(document).ready(function () {
+        $("#reset").click(function () {
+            $(':input', '#myModal').val("");
+        });
+    });
+
+    var table = $('#demoGrid').DataTable({
+        "order": [[1, 'asc']],
+        "fnCreatedRow": function (nRow, aData, iDataIndex) {
+            var CurrentStatus = $('td:eq(3)', nRow).text();
+            if (CurrentStatus == '1') {
+                CurrentStatus = '<i class="fa fa-star text-success"></i> Active';
+            }
+            else {
+                CurrentStatus = '<i class="fa fa-ban text-danger"></i> Suspended';
+            };
+            $('td:eq(3)', nRow).html(CurrentStatus); //rows no.2
+
+        },
+
+
+        //l - length changing input control
+        //f - filtering input
+        //t - The table!
+        //i - Table information summary
+        //p - pagination control
+        //r - processing display element
+
+        "processing": true, // for show progress bar
+        "serverSide": true, // for process server side
+        "filter": false, // this is for disable filter (search box)
+        "orderMulti": false, // for disable multiple column at once
+        "pageLength": 5,
+        "retrieve": true,
+        "searching": true,
+        "dom": 'rtpi',
+        "pagingType": "full_numbers",
+        "ajax": {
+            "url": "/Home/LoadData",
+            "type": 'POST'
+        },
+        "columns": [
+            {
+                "data": null, "sortable": false,
+                render: function (data, type, row, meta) {
+                    return meta.row + meta.settings._iDisplayStart + 1;
+                }
+            },
+            { "data": "ID", "autoWidth": true },
+            { "data": "FileName", "autoWidth": true },
+            { "data": "CurrentStatus", "autoWidth": true },
+            {
+                "render": function (data, type, full, meta) {
+                    return '<a href="javascript:;" class="btn btn-info btn-xs item_edit" data="' + full.ID + '">Edit</a>'
+                        + ' ' +
+                        '<a href="javascript:;" class="btn btn-danger btn-xs item_hapus" data="' + full.ID + '">Delete</a>'
+
+
+                }
+
+            },
+
+        ]
+    });
+
+    //Valdidation using jquery
+    function validate() {
+        var isValid = true;
+        if ($('#FileName').val().trim() == "") {
+            $('#messageFilename').show();
+            isValid = false;
+        }
+        else {
+            $('#messageFilename').hide();
+        }
+        return isValid;
+    }
+
+
+    function add() {
+        $('#ID').val("");
+        $('#Name').val("");
+        $('#CurrentStatus').val("");
+        $('#btnUpdate').hide();
+        $('#btnAdd').show();
+        $('#ID').hide();
+        $('#myModalLabelEdit').hide();
+        $('#myModalLabelAdd').show();
+    }
+
+    //ADD
+    $('#btnAdd').on('click', function () {
+        var res = validate();
+        if (res == false) {
+            return false;
+        }
+
+        var ID = $('#ID').val();
+        var FileName = $('#FileName').val();
+        var CurrentStatus = $('#CurrentStatus').val();
+        $.ajax({
+            type: "POST",
+            url: "/Home/Insert",
+            dataType: "JSON",
+            data: { ID: ID, FileName: FileName, CurrentStatus: CurrentStatus },
+            success: function (data) {
+
+                if (data) {
+                    $("#demoGrid").DataTable().ajax.reload(null, false);
+                    $('#myModal').modal('hide');
+                    $('#ID').val("");
+                    $('#FileName').val("");
+                    $('#Status').val("");
+                    window.location.reload(true);
+                }
+            },
+            error: function (errormessage) {
+                alert(errormessage.responseText);
+                window.location.reload(true);
+            }
+        });
+        return false;
+    });
+
+
+    //GET EDIT
+    $('#demoGrid').on('click', '.item_edit', function () {
+        var id = $(this).attr('data');
+        $.ajax({
+            type: "GET",
+            url: "/Home/Edit",
+            dataType: "JSON",
+            data: { id: id },
+            success: function (data) {
+                $.each(data, function (ID, FileName, CurrentStatus) {
+                    $('#ID').val(data.ID);
+                    $('#FileName').val(data.FileName);
+                    $('#CurrentStatus').val(data.CurrentStatus);
+                    $('#myModal').modal('show');
+                    $('#btnUpdate').show();
+                    $('#myModalLabelEdit').show();
+                    $('#myModalLabelAdd').hide();
+                    $('#btnAdd').hide();
+                    $('#ID').show();
+                    $("#ID").prop('disabled', true);
+
+                });
+            }
+        });
+        return false;
+    });
+
+    //UPDATE
+    function Update() {
+        var res = validate();
+        if (res == false) {
+            return false;
+        }
+        var empObj = {
+            ID: $('#ID').val(),
+            FileName: $('#FileName').val(),
+            CurrentStatus: $('#CurrentStatus').val(),
+        };
+
+        $.ajax({
+            url: "/Home/Update",
+            data: JSON.stringify(empObj),
+            type: "POST",
+            contentType: "application/json;charset=utf-8",
+            dataType: "json",
+            success: function (result) {
+                $("#demoGrid").DataTable().ajax.reload(null, false);
+                $('#myModal').modal('hide');
+                $('#ID').val("");
+                $('#FileName').val("");
+                $('#CurrentStatus').val("");
+                window.location.reload(true);
+            },
+            error: function (errormessage) {
+                alert(errormessage.responseText);
+            }
+        });
+    }
+
+
+    //GET HAPUS
+    $('#demoGrid').on('click', '.item_hapus', function () {
+        var ID = $(this).attr('data');
+        $('#ModalHapus').modal('show');
+        document.getElementById("confirm").innerHTML = "Are you sure you want to delete this " + "<b>" +  ID + "</b>" + "?";
+        $('#ID').val(ID);
+    });
+
+    //Hapus
+    $('#btn_hapus').on('click', function () {
+        var ID = $('#ID').val();
+        $.ajax({
+            type: "POST",
+            url: "/Home/Delete/",
+            dataType: "JSON",
+            data: { ID: ID },
+            success: function (data) {
+                $('#ModalHapus').modal('hide');
+                $("#demoGrid").DataTable().ajax.reload(null, false);
+                window.location.reload(true);
+            }
+        });
+        return false;
+    });
+
+
+    //Apply Custom search on jQuery DataTables here
+    oTable = $('#demoGrid').DataTable();
+    $('#btnSearch').click(function () {
+        // DataTable column index 0
+        oTable.columns(0).search($('#txtID').val().trim());
+        oTable.columns(2).search($('#txtStatus').val().trim());
+        //hit search on server
+        oTable.draw();
+    });
+</script>
+
+<script type="text/javascript">
+    var sel = $('#selform'),
+        txt = $('#txt'),
+        excel = $('#excel');
+
+    sel.on('change', function () {
+        if (this.value === 'TXT') {
+            txt.show(true);
+            excel.hide(true);
+        } else if (this.value === 'EXCEL') {
+            excel.show(true);
+            txt.hide(true);
+        }
+        else {
+            excel.hide(true);
+            txt.hide(true);
+        }
+    });
+</script>

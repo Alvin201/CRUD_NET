@@ -1,0 +1,73 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewBag.Title - My ASP.NET Application</title>
+    @Styles.Render("~/Content/css")
+    @Scripts.Render("~/bundles/modernizr")
+    @Scripts.Render("~/bundles/datatables")
+    <script src="~/Scripts/fontawesome.js"></script>
+
+    @*<script src="https://kit.fontawesome.com/a076d05399.js"></script>*@
+
+</head>
+<body>
+
+
+    <div style="margin-top:-50px;">
+            <nav class="navbar navbar-expand-sm bg-dark navbar-dark">
+               
+                <div class="collapse navbar-collapse" id="navbarTogglerDemo03" style=" margin-left:49%;">
+                    <ul class="navbar-nav mr-auto mt-2 mt-lg-0">
+                        <li style="color:white;">APP</li>
+                    </ul>
+                    @Html.ActionLink("Welcome, " + Session["Username"].ToString() + ".", null, null, routeValues: null, htmlAttributes: new { title = "Manage", @class = "nav-link" })
+                    <a class="nav-item nav-link" href="#" id="logout"><i class="fas fa-power-off"></i> Logout</a>
+
+                </div>
+            </nav>
+        </div>
+
+    <div class="area"></div><nav class="main-menu">
+    @{Html.RenderAction("SideMenu", "Menu");}
+    </nav>
+
+   
+    <div class="container body-content">
+        @RenderBody()
+        <hr />
+    
+        <footer>
+            <p>&copy; @DateTime.Now.Year - My ASP.NET Application</p>
+        </footer>
+    </div>
+
+
+
+    @Scripts.Render("~/bundles/bootstrap")
+    @RenderSection("scripts", required: false)
+
+    <script type="text/javascript">
+    $('#logout').click(function () {
+        window.location.href = '@Url.Action("Logout", "Login")';
+    });
+    </script>
+
+
+
+    <script>
+    //session end
+    var sessionTimeoutWarning = @Session.Timeout- 1;
+
+    var sTimeout = parseInt(sessionTimeoutWarning) * 60 * 1000;
+    setTimeout('SessionEnd()', sTimeout);
+
+    function SessionEnd() {
+        window.location.href = '@Url.Action("Logout", "Login")';
+    }
+    </script>
+
+
+</body>
+</html>
